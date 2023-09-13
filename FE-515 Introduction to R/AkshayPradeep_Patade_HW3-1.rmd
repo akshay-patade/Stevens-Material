@@ -1,0 +1,63 @@
+---
+title: "FE-515 Homework 3"
+author: "Akshay Pradeep Patade"
+date: "2023-04-13"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r}
+# 1. Download option prices of ticker ˆVIX for all expiration dates and name it VIX.options
+library(quantmod)
+VIX.options<- getOptionChain("^VIX")
+print(head(VIX.options))
+```
+
+```{r}
+#2. Download the current price (last quote price) for ˆVIX
+VIX_Last<- getQuote("^VIX")$Last
+VIX_Last
+```
+
+```{r}
+#3. For calls and puts of VIX.options at each expiration calculate the average of Bid and Ask. Create a new column named ‘Price‘ to contain the result.
+VIX.options.all<- getOptionChain("^VIX", NULL)
+for (i in 1:length(VIX.options.all)) {
+  VIX.options.all[[i]]$calls$Price<-0.5*(VIX.options.all[[i]]$calls$Bid + VIX.options.all[[i]]$calls$Ask)
+  VIX.options.all[[i]]$puts$Price<-0.5*(VIX.options.all[[i]]$puts$Bid + VIX.options.all[[i]]$puts$Ask)
+}
+print(head(VIX.options.all))
+```
+
+```{r}
+#4. For calls and puts of VIX.options at each expiration, add a column of InTheMoney, which takes value TRUE when it is in-the-money, and FALSE otherwise. Compare it to ITM column to check your results. (Hint. A call option is in-the-money when its strike is less than the current price of underlying. A put option is in-the-money if its strike is greater than the current price of underlying. And the current price of underlying is the last quote price from 1.2)
+
+for (i in 1:length(VIX.options.all)) {
+  VIX.options.all[[i]]$calls$InTheMoney<-VIX.options.all[[i]]$calls$Strike < VIX_Last
+  VIX.options.all[[i]]$puts$InTheMoney<-VIX.options.all[[i]]$puts$Strike > VIX_Last
+}
+
+print(head(VIX.options.all))
+
+```
+
+
+```{r}
+#5. For calls and puts of VIX at each expiration, delete all the fields except Strike, Bid, Ask, Price, and In-The-Money, and save them in .csv files with the format ”VIXdata2021-09-26Exp2021-10-08puts.csv”, here 2021-09-26 should be replaced by the date you download the data, and 2021-10-08 should be replaced by the date of expiration. (Hint. You may generate many .csv files, besides your .pdf report, please submit one of the .csv file.)
+
+VIX.options <- VIX.options.all
+for (i in 1:length(VIX.options)){ 
+  VIX.options[[i]]$calls <- VIX.options[[i]]$calls[c('Strike', 'Bid', 'Ask', 'Price', 'InTheMoney' )] 
+  VIX.options[[i]]$puts <- VIX.options[[i]]$puts[c('Strike', 'Bid', 'Ask', 'Price', 'InTheMoney' )] } 
+
+Exp <- names(VIX.options) 
+Exp2<-c() 
+for(i in 1:length(Exp)){ 
+  Exp1<-format(as.Date(Exp[i], "%B.%d.%Y"), "%Y-%m-%d") 
+  Exp2[i]<-Exp1 } 
+today <- format(Sys.Date()) 
+for(i in 1:length(Exp)){ 
+  write.csv(VIX.options[[i]]$calls, file=paste("VIXdata",today,"Exp",Exp2[i],"calls.csv",sep="")) 
+  write.csv(VIX.options[[i]]$puts, file=paste("VIXdata",today,"Exp",Exp2[i],"puts.csv",sep="")) }
+```

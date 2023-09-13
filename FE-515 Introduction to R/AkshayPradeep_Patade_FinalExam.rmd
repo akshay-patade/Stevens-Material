@@ -1,0 +1,247 @@
+---
+title: "Final Exam"
+author: "Akshay Pradeep Patade"
+date: "2023-05-02"
+output: pdf_document
+---
+
+1.1
+Download the historical prices for the ticker ”SPY” from 2019-01-01 until now.
+```{r}
+
+library(quantmod)
+getSymbols(Symbols = "SPY", from = '2019-01-01', to = '2023-05-02')
+head(SPY)
+tail(SPY)
+```
+
+1.2
+Calculate the daily log returns for SPY using the adjusted close prices.
+```{r}
+SPY <- data.frame(SPY)
+SPY.price <- SPY$SPY.Adjusted
+SPY.log.price <-log(SPY.price)
+SPY.log.return <-diff(SPY.log.price)
+head(SPY.log.return)
+```
+
+1.3
+Plot the daily log returns in red line.
+
+```{r}
+plot(SPY.log.return, type = "l", col = "red")
+```
+
+2.1
+Calculate the skewness and kurtosis of the SPY daily log return from Question 1, for both adjusted and unadjusted ones. (See page 21 and 23 of L6 and the corresponding HW problems)
+
+```{r}
+skewness <- function(x, adjusted = FALSE){
+  
+  m3 <- mean((x - mean(x))^3)
+  m2 <- mean((x - mean(x))^2)
+  m_tilde_3 <- m3/m2^(3/2)
+  if(adjusted == F){
+
+    return(paste("Unadjusted Skewness: ", m_tilde_3))
+  }
+  else {
+    
+    n <- length(x)
+    m_tilde_3_adjusted <- (sqrt(n*(n-1))/(n-2))*m_tilde_3
+    return(paste("Adjusted Skewness: ", m_tilde_3_adjusted))
+  }
+}
+skewness(SPY.log.return, adjusted = T)
+skewness(SPY.log.return, adjusted = F)
+
+
+kurtosis <- function(x, adjusted = FALSE){
+  
+  m2 <- mean((x - mean(x))^2)
+  m4 <- mean((x - mean(x))^4)
+  m_tilde_4 <- m4/m2^(4/2)
+  if(adjusted == F){
+    
+    return(paste("Unadjusted kurtosis: ", m_tilde_4))
+  }
+  else{
+    
+    n <- length(x)
+    m_tilde_4_adjusted <- ((n-1)/((n-2)*(n-3)))*((n+1)*m_tilde_4-3*(n-1))+3
+    return(paste("Adjusted kurtosis: ", m_tilde_4_adjusted))
+  }
+}
+
+kurtosis(SPY.log.return, adjusted = T)
+kurtosis(SPY.log.return, adjusted = F)
+```
+
+2.2
+Report the results in 2.1 using a 2×2 table (either data frame or matrix) such that: The column names are ”SPY.skewness” and ”SPY.kurtosis”. And the row names are ”Unadjusted” and ”Adjusted”.
+
+```{r}
+
+x <- data.frame (SPY.skewness = c (skewness(SPY.log.return, adjusted = T), skewness(SPY.log.return, adjusted = F)),SPY.kurtosis= c (kurtosis(SPY.log.return, adjusted = T), kurtosis(SPY.log.return, adjusted = F)))
+rownames(x) <- c("Adjusted", "Unadjusted")
+x
+```
+
+3.1
+Download options prices for ticker ”SPY” for all expiration dates.
+
+```{r}
+library(quantmod)
+SPY.option<- getOptionChain("SPY")
+head(SPY.option)
+```
+
+3.2
+For calls and puts of each expiration date, add a column of ”Price”, which
+is the average of “Bid” and “Ask”.
+
+```{r}
+SPY.option<- getOptionChain("SPY", NULL)
+for (i in 1:length(SPY.option)) {
+  
+  SPY.option[[i]]$calls$Price<-0.5*(SPY.option[[i]]$calls$Bid + SPY.option[[i]]$calls$Ask)
+  SPY.option[[i]]$puts$Price<-0.5*(SPY.option[[i]]$puts$Bid + SPY.option[[i]]$puts$Ask)
+}
+#head(SPY.options)
+```
+
+3.3
+Choose 3 expiration date for put options, plot volatility smiles (Strike in x-axis and ImpliedVol in y-axis, similar to call smiles on page 22 of L9).
+
+```{r}
+for (i in 1:length(SPY.option)) {
+SPY.option[[i]]$calls$Price <- 0.5*(SPY.option[[i]]$calls$Bid +SPY.option[[i]]$calls$Ask)
+SPY.option[[i]]$puts$Price <- 0.5*(SPY.option[[i]]$puts$Bid + SPY.option[[i]]$puts$Ask)
+}
+sigma <- 0.2
+bisection.new <- function(f, a, b, tol = 0.001, N.max = 100){
+f.a <- f(a)
+f.b <- f(b)
+if(f.a*f.b > 0){
+}else if(f.a == 0){
+return(a)
+}else if(f.b == 0){
+return(b)
+}else if(is.na(f.a*f.b)){
+return(NA)
+}
+for(n in 1:N.max){
+c <- (a+b)/2
+f.c <- f(c)
+if(f.c == 0 || abs(b - a) < tol){
+break
+}
+if(f.a*f.c < 0){
+b <- c
+f.b <- f.c
+}else{
+a <- c
+f.a <- f.c
+}
+}
+return(c)
+}
+bs.call <- function(S0, K, T1, sigma, r){
+d1 <- (log(S0/K) + (r+0.5*sigma * sigma)*T1)/(sigma*sqrt(T1))
+d2 <- d1 - sigma*sqrt(T1)
+S0
+}
+
+bs.put <- function(S0, K, T1, sigma, r){
+d1 <- (log(S0/K) + (r+0.5*sigma * sigma)*T1)/(sigma*sqrt(T1))
+d2 <- d1 - sigma*sqrt(T1)
+-S0*pnorm(-d1) + exp(-r*T1)*K*pnorm(-d2)
+}
+Vega <- function(S0, K, T1, sigma, r){
+d1 <- (log(S0/K) + (r+0.5*sigma * sigma)*T1)/(sigma*sqrt(T1))
+sqrt(T1)*S0*dnorm(d1)
+}
+dprice.diff <- function(sigma)Vega(S0,K,T1,sigma,r)
+implied.vol<- function(S0, K, T1, r, price,type, method="bisection"){
+price.diff.call <- function(sigma)bs.call(S0, K, T1, sigma, r) - price
+price.diff.put <- function(sigma)price - bs.put(S0, K, T1, sigma, r)
+if(method == "bisection"&&type =="call"){
+return(bisection.new(price.diff.call, 0.01, 5))
+}else{
+return(bisection.new(price.diff.put, 0.01, 5))
+}
+if(method == "Newton-Raphson"&&type=="call"){
+dprice.diff <- function(sigma)Vega(S0, K, T1, sigma, r)
+return(Newton_Raphson(price.diff.call, dprice.diff, 0.25))
+}else{
+return(Newton_Raphson(price.diff.put, dprice.diff, 0.25))
+}
+}
+```
+
+3.4
+Choose 3 expiration date for put options, plot volatility smiles (Strike in x-axis and ImpliedVol in y-axis, similar to call smiles on page 22 of L9).
+
+```{r}
+
+SPY.expiration <- names(SPY.option)
+T.vec <- (as.Date(SPY.expiration,"%b.%d.%Y")-Sys.Date())/365
+T.vec <- as.numeric(T.vec)
+SPY.S0 <- getQuote("SPY")$Last
+r <- 0.07 * 0.01
+for(i in 1:length(SPY.option)){
+  SPY.option[[i]]$calls$Price <- 0.5*(SPY.option[[i]]$calls$Bid + SPY.option[[i]]$calls$Ask)
+  for(j in 1:nrow(SPY.option[[i]]$calls)){
+  SPY.option[[i]]$calls$impliedVol[j] <-implied.vol(SPY.S0,SPY.option[[i]]$calls$Strike[j],T.vec[i],r,SPY.option[[i]]$calls$Price[j],
+"calls")
+  }
+  SPY.option[[i]]$calls <-SPY.option[[i]]$calls[c("Bid", "Ask", "Strike","Price","impliedVol")]
+}
+for(i in 1:length(SPY.option)){
+SPY.option[[i]]$puts$Price <- 0.5*(SPY.option[[i]]$puts$Bid
++ SPY.option[[i]]$puts$Ask)
+for(j in 1:nrow(SPY.option[[i]]$puts)){
+if(is.na(SPY.option[[i]]$puts$Price[j])) {SPY.option[[i]]$puts$Price[j]=FALSE} else
+{if(SPY.option[[i]]$puts$Price[j]) {SPY.option[[i]]$puts$Price[j]}}
+SPY.option[[i]]$puts$impliedVol[j] <-implied.vol(SPY.S0,SPY.option[[i]]$puts$Strike[j],
+T.vec[i],
+r,
+SPY.option[[i]]$puts$Price[j],
+"puts")
+}
+SPY.option[[i]]$puts <-
+SPY.option[[i]]$puts[c("Bid", "Ask", "Strike","Price","impliedVol")]
+}
+plot(NA, xlim = c(300,500), ylim = c(0,0.4), xlab = "Strike",
+ylab = "ImpliedVol")
+lines(SPY.option[[1]]$puts$Strike,
+SPY.option[[1]]$puts$impliedVol,col = "red")
+lines(SPY.option[[2]]$puts$Strike,
+SPY.option[[2]]$puts$impliedVol,col = "green")
+lines(SPY.option[[3]]$puts$Strike,
+SPY.option[[3]]$puts$impliedVol,col = "blue")
+legend("bottomleft", SPY.expiration[c(6,9,17)],
+fill = c("red","green","blue"))
+```
+
+3.5
+Keep fields “Strike”,“Bid”,“Ask”, “Price”, and “ImpliedVol” and save the calls and puts of each expiration date in .csv file. Submit one of the .csv file also.
+```{r}
+
+print(getwd())
+
+setwd("/Users/akshaypatade/Desktop/FE515/")
+Sys.Date()
+
+(today <- format(Sys.Date(), "%Y_%m_%d"))
+(Exp <- names(SPY.option))
+
+Exp <- as.Date(Exp, format = "%b.%d.%Y")
+for (i in 1:length(Exp)) {
+write.csv(SPY.option[[i]]$calls,
+file = paste0("data",today,"Exp",Exp[i],"calls.csv"))
+write.csv(SPY.option[[i]]$puts,
+file = paste0("data",today,"Exp",Exp[i],"puts.csv"))
+}
+
+```

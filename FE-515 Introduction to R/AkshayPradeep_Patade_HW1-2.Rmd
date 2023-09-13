@@ -1,0 +1,199 @@
+---
+title: "FE515 2022A Assignment 1"
+author: "AKSHAY PRADEEP PATADE 20009092"
+date: "8TH FEBRUARY 2023"
+output: pdf_document
+---
+
+# Question 1: (50 points)
+
+## 1.1 
+
+Generate a vector x from 5 to 35 with increment 2, and calculate its length.
+
+```{r}
+library(knitr)
+x <- seq(from = 5, to = 35, by = 2)
+print(x)
+print(length(x))
+```
+
+## 1.2
+
+Use the vector x in 1.1 to generate a 4-by-4 matrix A which filled by rows.
+
+```{r}
+A <- matrix(data = x, nrow = 4, ncol = 4, byrow = TRUE)
+print(A)
+
+```
+
+## 1.3 
+
+Calculate the eigenvalues of the matrix A in 1.2.
+
+```{r}
+eigenValues <- eigen(A)$values
+print(eigenValues)
+```
+
+## 1.4 
+
+Change the 4 elements in first two rows and first two columns of the matrix
+A to 7. i.e. Let a11, a12, a21, a22 equal to 7.
+
+```{r}
+A[1:2, 1:2] = 7
+print(A)
+```
+
+## 1.5
+
+Calculate the determinant of A in 1.4.
+
+```{r}
+detA <- det(A)
+print(detA)
+```
+
+## 1.6
+
+Calculate the inverse of A in 1.4.
+
+```{r}
+Ainv <- solve(A)
+print(Ainv)
+```
+
+## 1.7
+
+Create a vector b by assigning the first row of A in 1.4 to b.
+
+```{r}
+b <- A[1, ]
+print(b)
+```
+
+## 1.8
+
+Find y by solving linear equation A y = b with the A in 1.4 and b in 1.7.
+(Hint. y can be found by y = A-1 b where A-1 is the inverse of A.)
+
+```{r}
+y = Ainv %*% b
+print(y)
+```
+
+
+## 1.9
+
+For each element of y in 1.8 find the minimum between its value and pi/2.
+Store all results into a single vector. Print the value of resulting vector.
+
+```{r}
+minimum_vector <- pmin(y, pi / 2)
+print(minimum_vector)
+```
+
+
+## 1.10
+
+Read the documentation for function diag and use the function to generate
+the following 10-by-10 square matrix.
+
+```{r}
+values <- 1:10
+diag_matrix <- diag(values, nrow = 10, ncol = 10)
+print(diag_matrix)
+```
+
+# Question 2
+
+Consider a Fibonacci sequence Sn = Sn-1 + Sn-2 with the initial value S0 = 0
+and the value at stage 1 as S1 = 1. Please determine the values of S3 and S50.
+
+```{r}
+S <- numeric(50)
+S[1] <- 1
+S[2] <- 1
+for (i in 3:50) {
+  S[i] <- S[i-1] + S[i-2]
+}
+
+print(S[3])
+print(S[50])
+```
+
+# Question 3
+
+Find all the integers between 1 and 100 which are divisible by both 3 and 5.
+Store the results into a vector. Print each element of the resulting vector.
+
+```{r}
+nums <- numeric()
+for (i in 1:100) {
+  if (i %% 3 == 0 && i %% 5 == 0) {
+    nums <- c(nums, i)
+  }
+}
+print(nums)
+```
+
+# Question 4
+
+Create a function with input parameter n and returns a vector. The output
+vector contains all integers between 1 and n which are divisible by 3 and 5.
+Please test the function with two cases n = 100 and n = 200.
+
+```{r}
+find_multiples_of_3_and_5 <- function(n) {
+  nums <- numeric()
+  for (i in 1:n) {
+    if (i %% 3 == 0 && i %% 5 == 0) {
+      nums <- c(nums, i)
+    }
+  }
+  return(nums)
+}
+
+print(find_multiples_of_3_and_5(100))
+print(find_multiples_of_3_and_5(200))
+```
+
+# Question 5
+
+Create a function with parameters a and b. In the function body, it tries to find
+the smallest positive number that is divisible by both a and b. Please test your
+function with following two cases (a = 3, b = 5) and (a = 6, b = 10).
+
+```{r}
+find_lcm <- function(a, b) {
+  for (i in 2:a * b) {
+    if (i %% a == 0 && i %% b == 0) {
+      return(i)
+    }
+  }
+}
+
+print(find_lcm(3,5))
+print(find_lcm(6,10))
+```
+
+# Question 6
+
+Please find the attached JPM.csv and load this data into R. Make a subset of
+the loaded data frame. The subset contains open prices, closing prices and ad-
+justed closing prices (They are indicated by Open, Close and Adjusted). Please
+calculate the mean value of each column of the subset. (Hint. apply functions
+are better choice for this problem.)
+
+```{r}
+
+data <- read.csv("JPM-2.csv")
+#print(data)
+subset_data <- data[, c(2, 5, 7)]
+#print(subset_data)
+mean_value <- colMeans(subset_data)
+print(mean_value)
+```
+
